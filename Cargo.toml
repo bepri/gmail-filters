@@ -2,6 +2,7 @@
 name = "gmail-filters-rs"
 version = "0.1.0"
 edition = "2021"
+license = "WTFPL"
 
 [dependencies]
 aho-corasick = "1.1.3"
