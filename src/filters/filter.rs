@@ -83,7 +83,7 @@ struct FilterRaw {
 }
 
 impl FilterRaw {
-    /// Get a "cooked" filter, breaking a raw one down into a more
+    /// Get a "cooked" filter, baking a raw one down into a more
     /// memory-efficient representation with children separated out.
     pub(self) fn cook(self) -> Filter {
         let filter = FilterInner {
