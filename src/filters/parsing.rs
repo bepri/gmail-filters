@@ -1,8 +1,10 @@
+//! Parsing for input filter config files.
 use std::{fs, path::PathBuf};
 use toml;
 
 use super::filter::{Filter, FiltersFile};
 
+/// Read in and parse `path` into filters ready for serialization.
 pub fn get_config(path: PathBuf) -> Vec<Filter> {
     let filters_raw: FiltersFile = {
         let filters_file_content = fs::read_to_string(path).unwrap_or_else(|err| {
