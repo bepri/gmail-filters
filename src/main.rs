@@ -1,5 +1,5 @@
-mod filters;
 mod args;
+mod filters;
 
 use args::{Args, Parser};
 use filters::parsing::get_config;
