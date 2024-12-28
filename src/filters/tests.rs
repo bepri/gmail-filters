@@ -1,6 +1,6 @@
 use std::sync::LazyLock;
 
-use filter::Filter;
+use filter::{Filter, Predicate};
 
 use super::*;
 
@@ -31,13 +31,13 @@ static TEST_CONFIG: LazyLock<Vec<Filter>> = LazyLock::new(|| {
         name = "F2C2"
     "#;
 
-    parsing::get_config(TEST_CONFIG_RAW.into())
+    parsing::get_config(TEST_CONFIG_RAW.into()).expect(EXPECT_TEST_CASE)
 });
 
 #[test]
 fn test_inject_variables() {
     let filter = &TEST_CONFIG.first().expect(EXPECT_TEST_CASE).filter;
-    let mailing_lists = filter.mailing_lists.as_ref().expect(EXPECT_TEST_CASE);
+    let mailing_lists: &Vec<Predicate> = filter.mailing_lists.as_ref();
 
     assert_eq!(mailing_lists.first().expect(EXPECT_TEST_CASE).rule, "aaa");
     assert_eq!(mailing_lists.get(1).expect(EXPECT_TEST_CASE).rule, "bbb");
@@ -45,8 +45,9 @@ fn test_inject_variables() {
 
 #[test]
 fn test_cook_filters() {
-    let Some(children) = &TEST_CONFIG.get(1).expect(EXPECT_TEST_CASE).children else {
-        panic!("No children were found.");
+    let children = {
+        let filter = TEST_CONFIG.get(1).expect(EXPECT_TEST_CASE);
+        &filter.children
     };
 
     assert_eq!(children.len(), 2);

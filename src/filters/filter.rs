@@ -41,24 +41,18 @@ impl FiltersFile {
 
     /// Recursively substitutes in variables.
     fn transform(filters: &mut Vec<FilterRaw>, ac: &AhoCorasick, values: &[&str]) {
-        // Closure to avoid code repetition. Checks if any predicates are
-        // present, then injects the variables.
-        let maybe_inject = |maybe_predicates: &mut Option<Vec<Predicate>>| {
-            if let Some(ref mut predicates) = maybe_predicates {
-                for predicate in predicates {
-                    predicate.inject_variables(ac, values);
-                }
+        // Closure to avoid code repetition. Just injects variables into a predicate.
+        let inject = |predicates: &mut Vec<Predicate>| {
+            for predicate in predicates {
+                predicate.inject_variables(ac, values);
             }
         };
 
         for filter in filters {
-            maybe_inject(&mut filter.mailing_lists);
-            maybe_inject(&mut filter.tos);
-
+            inject(&mut filter.mailing_lists);
+            inject(&mut filter.tos);
             // Recursively perform substitutions on children
-            if let Some(ref mut children) = filter.children {
-                Self::transform(children, ac, values)
-            }
+            Self::transform(&mut filter.children, ac, values);
         }
     }
 }
@@ -73,15 +67,15 @@ struct FilterRaw {
 
     /// Mailing lists to filter on.
     #[serde(default)]
-    mailing_lists: Option<Vec<Predicate>>,
+    mailing_lists: Vec<Predicate>,
 
     /// "To" addresses to filter on.
     #[serde(default)]
-    tos: Option<Vec<Predicate>>,
+    tos: Vec<Predicate>,
 
     /// Any filters that depend on the parent filter being true.
     #[serde(default)]
-    children: Option<Vec<Self>>,
+    children: Vec<Self>,
 }
 
 impl FilterRaw {
@@ -94,9 +88,7 @@ impl FilterRaw {
             tos: self.tos,
         };
 
-        let children = self
-            .children
-            .map(|children| children.into_iter().map(FilterRaw::cook).collect());
+        let children = self.children.into_iter().map(FilterRaw::cook).collect();
 
         Filter { filter, children }
     }
@@ -109,10 +101,10 @@ pub struct FilterInner {
     pub name: String,
 
     /// Mailing lists to filter on.
-    pub mailing_lists: Option<Vec<Predicate>>,
+    pub mailing_lists: Vec<Predicate>,
 
     /// "To" addresses to filter on.
-    pub tos: Option<Vec<Predicate>>,
+    pub tos: Vec<Predicate>,
 }
 
 /// Public filter interface, containing a "true" filter and any of its children.
@@ -122,7 +114,7 @@ pub struct Filter {
     pub filter: FilterInner,
 
     /// Dependent filters
-    pub children: Option<Vec<Self>>,
+    pub children: Vec<Self>,
 }
 
 /// A boolean predicate representing a single filter rule.

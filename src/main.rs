@@ -3,13 +3,15 @@
 
 mod args;
 mod filters;
+mod prelude;
 
-use args::{Args, Parser};
-use filters::parsing::get_config;
+use crate::args::{Args, Parser};
+use crate::filters::parsing::get_config;
+use crate::prelude::*;
 
 use ::std::process::ExitCode;
 
-fn main() -> Result<ExitCode, Box<dyn ::std::error::Error>> {
+fn main() -> Result<ExitCode> {
     let args = Args::parse();
     let file_content = ::std::fs::read_to_string(args.file)?;
     let config = get_config(file_content);

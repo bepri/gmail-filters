@@ -2,13 +2,14 @@
 use toml;
 
 use super::filter::{Filter, FiltersFile};
+use crate::prelude::*;
 
 /// Read in and parse `path` into filters ready for serialization.
-pub fn get_config(config: String) -> Vec<Filter> {
-    let filters_raw: FiltersFile = toml::from_str(&config).unwrap_or_else(|err| {
-        eprintln!("Error parsing file: {err}");
-        std::process::exit(1);
-    });
+pub fn get_config(config: String) -> Result<Vec<Filter>> {
+    let filters_raw: FiltersFile = match toml::from_str(&config) {
+        Ok(fr) => fr,
+        Err(err) => return Err(format!("Error parsing TOML: {}", err.message()).into()),
+    };
 
-    filters_raw.get_filters()
+    Ok(filters_raw.get_filters())
 }
