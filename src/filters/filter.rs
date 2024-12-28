@@ -11,8 +11,8 @@ use std::collections::HashMap;
 #[derive(Deserialize, Debug)]
 pub(super) struct FiltersFile {
     /// A mapping of variables to search for and replace in predicate values.
-    #[serde(alias = "variables")]
-    vars: HashMap<String, String>,
+    #[serde(alias = "variables", default)]
+    vars: Option<HashMap<String, String>>,
 
     /// The raw filters read directly from the config file.
     filters: Vec<FilterRaw>,
@@ -22,16 +22,18 @@ impl FiltersFile {
     /// Retrieve filters from the file, substituting in variables and creating
     /// the dependency graph.
     pub(super) fn get_filters(mut self) -> Vec<Filter> {
-        let keys: Vec<String> = self.vars.keys().map(|key| format!("{{{}}}", key)).collect();
-        let values: Vec<&str> = self.vars.values().map(|v| v.as_str()).collect();
-
-        let ac = AhoCorasickBuilder::new()
-            .ascii_case_insensitive(false)
-            .build(keys)
-            .unwrap();
-
         // Substitute variables
-        Self::transform(&mut self.filters, &ac, values.as_slice());
+        if let Some(vars) = self.vars {
+            let keys: Vec<String> = vars.keys().map(|key| format!("{{{}}}", key)).collect();
+            let values: Vec<&str> = vars.values().map(|v| v.as_str()).collect();
+
+            let ac = AhoCorasickBuilder::new()
+                .ascii_case_insensitive(false)
+                .build(keys)
+                .unwrap();
+
+            Self::transform(&mut self.filters, &ac, values.as_slice());
+        }
 
         // Break down into dependency graph
         self.filters.into_iter().map(FilterRaw::cook).collect()
@@ -102,25 +104,25 @@ impl FilterRaw {
 
 /// A "true" filter, only containing the filter rules themselves.
 #[derive(Debug)]
-struct FilterInner {
+pub struct FilterInner {
     /// The name of a given filter. Equivalent to label name in email clients.
-    name: String,
+    pub name: String,
 
     /// Mailing lists to filter on.
-    mailing_lists: Option<Vec<Predicate>>,
+    pub mailing_lists: Option<Vec<Predicate>>,
 
     /// "To" addresses to filter on.
-    tos: Option<Vec<Predicate>>,
+    pub tos: Option<Vec<Predicate>>,
 }
 
 /// Public filter interface, containing a "true" filter and any of its children.
 #[derive(Debug)]
 pub struct Filter {
     /// Internal filter rules
-    filter: FilterInner,
+    pub filter: FilterInner,
 
     /// Dependent filters
-    children: Option<Vec<Self>>,
+    pub children: Option<Vec<Self>>,
 }
 
 /// A boolean predicate representing a single filter rule.
@@ -129,15 +131,15 @@ pub struct Filter {
 /// "from:*@amazon.com" would make a predicate with the value "*@amazon.com",
 /// and "-from:*@amazon.com" would be the same with negate set to true.
 #[derive(Deserialize, Debug)]
-struct Predicate {
+pub struct Predicate {
     /// Actual predicate to match on. Should have an alias to a more
     /// user-friendly name for deserialization.
     #[serde(alias = "url", alias = "addr")]
-    rule: String,
+    pub rule: String,
 
     /// Whether or not to negate a rule. False if not specified.
     #[serde(default)]
-    negate: bool,
+    pub negate: bool,
 }
 
 impl Predicate {
