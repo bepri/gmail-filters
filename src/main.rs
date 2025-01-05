@@ -14,8 +14,11 @@ use ::std::process::ExitCode;
 fn main() -> Result<ExitCode> {
     let args = Args::parse();
     let file_content = ::std::fs::read_to_string(args.file)?;
-    let config = get_config(file_content);
-    println!("{config:#?}");
+    let config = get_config(file_content)?;
+    println!("{:#?}", config);
+    for filter in config.into_iter() {
+        println!("{}", filter.filter.into_xml_string()?);
+    }
 
     Ok(ExitCode::SUCCESS)
 }
